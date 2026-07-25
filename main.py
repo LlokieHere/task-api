@@ -11,11 +11,34 @@ class TaskUpdate(BaseModel):
 
 app = FastAPI()
 
-tasks = [
-    {"id": 1, "title": "Buy milk", "done": False},
-    {"id": 2, "title": "Walk the dog", "done": False},
-    {"id": 3, "title": "Finish backend homework", "done": True},
-]
+import sqlite3
+
+DB_FILE = "tasks.db"
+
+def get_connection():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row  # lets us access columns by name, like a dict
+    return conn
+
+def init_db():
+    conn = get_connection()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            done BOOLEAN NOT NULL DEFAULT 0
+        )
+    """)
+    # Only seed example tasks if the table is empty
+    count = conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
+    if count == 0:
+        conn.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("Buy milk", False))
+        conn.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("Walk the dog", False))
+        conn.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", ("Finish backend homework", True))
+    conn.commit()
+    conn.close()
+
+init_db()
 
 @app.get("/")
 def root():
