@@ -25,18 +25,18 @@ def root():
 def health():
     return {"status": "ok"}
 
-@app.get("/tasks")
+@app.get("/tasks", summary="Lists all tasks")
 def get_tasks():
     return tasks
 
-@app.get("/tasks/{task_id}")
+@app.get("/tasks/{task_id}", summary="get a single task by id")
 def get_task(task_id: int):
     for task in tasks:
         if task["id"] == task_id:
             return task
     raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
 
-@app.post("/tasks", status_code=201)
+@app.post("/tasks", status_code=201, summary="Create a new task")
 def create_task(new_task: TaskCreate):
     title = new_task.title.strip()
     if not title:
@@ -47,7 +47,7 @@ def create_task(new_task: TaskCreate):
     tasks.append(task)
     return task
 
-@app.put("/tasks/{task_id}")
+@app.put("/tasks/{task_id}", summary="Replace an existing task")
 def update_task(task_id: int, updated: TaskUpdate):
     title = updated.title.strip()
     if not title:
@@ -63,7 +63,7 @@ def update_task(task_id: int, updated: TaskUpdate):
 
 from fastapi import Response
 
-@app.delete("/tasks/{task_id}", status_code=204)
+@app.delete("/tasks/{task_id}", status_code=204, summary="delete a task")
 def delete_task(task_id: int):
     for task in tasks:
         if task["id"] == task_id:
