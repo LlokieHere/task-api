@@ -32,7 +32,7 @@ def get_task(task_id: int):
             return task
     raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
 
-@app.post("/tasks")
+@app.post("/tasks", status_code=201)
 def create_task(new_task: TaskCreate):
     title = new_task.title.strip()
     if not title:
