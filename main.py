@@ -71,10 +71,15 @@ def create_task(new_task: TaskCreate):
     if not title:
         raise HTTPException(status_code=400, detail="Title is required")
 
-    next_id = max((t["id"] for t in tasks), default=0) + 1
-    task = {"id": next_id, "title": title, "done": False}
-    tasks.append(task)
-    return task
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO tasks (title, done) VALUES (?, ?)", (title, False)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+
+    return {"id": new_id, "title": title, "done": False}    
 
 @app.put("/tasks/{task_id}", summary="Replace an existing task")
 def update_task(task_id: int, updated: TaskUpdate):
