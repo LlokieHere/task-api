@@ -87,21 +87,31 @@ def update_task(task_id: int, updated: TaskUpdate):
     if not title:
         raise HTTPException(status_code=400, detail="Title is required")
 
-    for task in tasks:
-        if task["id"] == task_id:
-            task["title"] = title
-            task["done"] = updated.done
-            return task
+    conn = get_connection()
+    cursor = conn.execute(
+        "UPDATE tasks SET title = ?, done = ? WHERE id = ?",
+        (title, updated.done, task_id)
+    )
+    conn.commit()
 
-    raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    if cursor.rowcount == 0:
+        conn.close()
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+
+    row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    conn.close()
+    return {**dict(row), "done": bool(row["done"])}
 
 from fastapi import Response
 
-@app.delete("/tasks/{task_id}", status_code=204, summary="delete a task")
+@app.delete("/tasks/{task_id}", status_code=204, summary="Delete a task")
 def delete_task(task_id: int):
-    for task in tasks:
-        if task["id"] == task_id:
-            tasks.remove(task)
-            return Response(status_code=204)
+    conn = get_connection()
+    cursor = conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    conn.commit()
+    conn.close()
 
-    raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+
+    return Response(status_code=204)
